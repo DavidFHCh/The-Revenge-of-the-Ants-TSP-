@@ -29,12 +29,19 @@ pub fn get_ciudades<'a>() -> Result<Vec<Ciudad>, rusqlite::Error> {
             ciudad1: renglon.get(0),
             ciudad2: renglon.get(1),
             distancia: renglon.get(2),
+            probabilidad: 1.0/((NUM_CIUDADES as f64)-1.0)
         }
     }).unwrap();
 
+    let con_var = Conexion{
+        ciudad1: 0,
+        ciudad2: 0,
+        distancia: 0.0,
+        probabilidad: 0.0,
+    };
     let mut ceros = Vec::with_capacity(NUM_CIUDADES);
     for _i in 0..NUM_CIUDADES {
-        ceros.push(0.0);
+        ceros.push(con_var.clone());
     }
 
     let mut m_adyacencias = Vec::with_capacity(NUM_CIUDADES);
@@ -47,15 +54,21 @@ pub fn get_ciudades<'a>() -> Result<Vec<Ciudad>, rusqlite::Error> {
         let aris = arista.unwrap();
         let id1 = aris.ciudad1;
         let id2 = aris.ciudad2;
-        m_adyacencias[id1 as usize][id2 as usize] = aris.distancia.clone();
-        m_adyacencias[id2 as usize][id1 as usize] = aris.distancia.clone();
+        m_adyacencias[id1 as usize][id2 as usize].ciudad1 = aris.ciudad1;
+        m_adyacencias[id1 as usize][id2 as usize].ciudad2 = aris.ciudad2;
+        m_adyacencias[id1 as usize][id2 as usize].distancia = aris.distancia;
+        m_adyacencias[id1 as usize][id2 as usize].probabilidad = aris.probabilidad;
+        m_adyacencias[id2 as usize][id1 as usize].ciudad1 = aris.ciudad1;
+        m_adyacencias[id2 as usize][id1 as usize].ciudad2 = aris.ciudad2;
+        m_adyacencias[id2 as usize][id1 as usize].distancia = aris.distancia;
+        m_adyacencias[id2 as usize][id1 as usize].probabilidad = aris.probabilidad;
     }
 
     for i in 0..NUM_CIUDADES {
         ciudades.push(
             Ciudad {
                 ciudad_id: i as i32,
-                adyacencias: m_adyacencias[i].clone(),
+                adyacencias: &m_adyacencias[i],
             }
         );
     }

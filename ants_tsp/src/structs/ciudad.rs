@@ -4,7 +4,7 @@ use std::fmt;
 #[derive(Clone)]
 pub struct Ciudad {
     pub ciudad_id: i32,
-    pub adyacencias: Vec<f64>,
+    pub adyacencias: &Vec<f64>,
 }
 
 
