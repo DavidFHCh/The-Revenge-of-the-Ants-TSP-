@@ -65,3 +65,6 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Vec<Vec<Conexion>>), rusqlite::Error
     Ok((ciudades,m_adyacencias))
 
 }
+
+
+//https://www.reddit.com/r/rust/comments/4cxpym/sharing_a_mutable_vector_across_multiple_threads/?st=jaur6k4q&sh=ccdbea33
