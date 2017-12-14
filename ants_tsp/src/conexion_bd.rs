@@ -65,7 +65,7 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
             ciudad1: renglon.get(0),
             ciudad2: renglon.get(1),
             distancia: renglon.get(2),
-            probabilidad: Mutex::new(1.0/((NUM_CIUDADES as f64)-1.0))
+            probabilidad: Mutex::new(1.0),
         }
     }).unwrap();
 
