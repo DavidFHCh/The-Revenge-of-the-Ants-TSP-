@@ -16,29 +16,30 @@ use threadpool::ThreadPool;
 use std::sync::mpsc::channel;
 use ants_tsp::structs::conexion::Conexion;
 
-fn computation(matriz: Arc<Mutex<Vec<Vec<Conexion>>>>) -> String{
-        let mut shared = matriz.lock().unwrap();
-        let mut rng = thread_rng();
-        let adys = rng.choose(shared.deref()).unwrap();
-        let mut conexion = rng.choose(&adys).unwrap();
-        let mut prob = conexion.probabilidad;
+fn computation(matriz: Arc<Vec<Vec<Conexion>>>) -> String{
+        //let mut shared = matriz;
+        let conexiones = rand::thread_rng().choose(&matriz);
+        let conexion = rand::thread_rng().choose(&conexiones.unwrap());
+        let mut prob = conexion.unwrap().probabilidad.lock().unwrap();
 
-        let formatted1 = format!("{} ", conexion.probabilidad);
-        let mut prob = conexion.probabilidad.clone();
-        let formatted2 = format!("{} ", conexion.probabilidad);
+        let formatted1 = format!("{} ", prob);
+        *prob += 1.0;
+        let formatted2 = format!("{} ", prob);
 
-        let res = format!("{} {}",formatted1,formatted2);
+        let formatted3 = format!("{} {}", conexion.unwrap().ciudad1,conexion.unwrap().ciudad2);
+
+        let res = format!("{} {} {}",formatted1,formatted2, formatted3);
         res
 }
 
 fn main() {
 let n_workers = num_cpus::get();
-let n_jobs = 8;
+let n_jobs = 100000000;
 let pool = ThreadPool::new(n_workers);
 
 let ciudades_matriz = get_ciudades().unwrap();
 //let ciudades = ciudades_matriz.0;
-let matriz = Arc::new(Mutex::new(ciudades_matriz.1));
+let matriz = ciudades_matriz.1;
 
 
 let (tx, rx) = channel();
