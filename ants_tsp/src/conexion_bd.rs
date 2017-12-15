@@ -79,6 +79,18 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
     for i in 0..NUM_CIUDADES {
         ciudades.push(i);
     }
+    let mut sum = 0.0;
+    for aristas in &m_adyacencias {
+        for arista in aristas {
+            sum += arista.distancia;
+        }
+    }
+
+    for aristas in &m_adyacencias {
+        for arista in aristas {
+            *arista.probabilidad.lock().unwrap() = arista.distancia/sum;
+        }
+    }
 
     Ok((ciudades,Arc::new(m_adyacencias)))
 
