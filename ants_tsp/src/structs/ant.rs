@@ -1,5 +1,8 @@
+use structs::conexion::Conexion;
+use std::sync::{Arc};
+
 pub struct Ant{
-    ciudad : usize,
+    pub ciudad : usize,
 }
 
 
@@ -10,7 +13,8 @@ impl Ant{
         }
     }
 
-    pub fn muevete(matriz: Vec<Vec<Conexion>>) {
-        
+    pub fn muevete(&mut self,matriz: &Arc<Vec<Vec<Conexion>>>, ciudades_visitar:&Vec<usize>) -> (usize,f64) {
+        self.ciudad = 15;
+        (0,0.0)
     }
 }

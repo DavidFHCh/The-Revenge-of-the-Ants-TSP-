@@ -1,7 +1,7 @@
 //fn main() {
 //    println!("Hello, world!");
 //}
-
+#![feature(vec_remove_item)]
 extern crate threadpool;
 extern crate num_cpus;
 extern crate ants_tsp;
@@ -17,27 +17,54 @@ use std::sync::mpsc::channel;
 use ants_tsp::structs::conexion::Conexion;
 use ants_tsp::structs::queue_parll::QueueParll;
 use ants_tsp::structs::ant::Ant;
+use ants_tsp::structs::solucion::Solucion;
 use rand::distributions::{IndependentSample, Range};
 use config::{Config, File, FileFormat, Value};
 
 
 
 static RECORRIDOS: usize = 2000;
+static AUMENTO_FEROMONA: f64 = 0.2;
+static DISMINUCION_FEROMONA: f64 = 0.2;
 
-fn computation(matriz: Arc<Vec<Vec<Conexion>>>,ant: Ant, evaporar: bool) -> String{
+fn recorrido_hormiga(matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> String{
         //let mut shared = matriz;
         let conexiones = rand::thread_rng().choose(&matriz);
-        let conexion = rand::thread_rng().choose(&conexiones.unwrap());
-        let mut prob = conexion.unwrap().probabilidad.lock().unwrap();
+        let mut con = rand::thread_rng().choose(&conexiones.unwrap());
+        let mut conexion = con.unwrap();
+        let mut solucion = Solucion::new();
+        let num_c = ciudades_visitar.len();
+        for i in 0..num_c {
+            let movimiento = ant.muevete(&matriz,&ciudades_visitar);
+            solucion.f_obj += movimiento.1;
+            solucion.solucion.push(movimiento.0.clone());
+            //ciudades_visitar.remove_item(&movimiento.0);
+            //se eliminara el que se visito afuera de la funcion
+        }
 
-        let formatted1 = format!("{} ", prob);
-        //*prob += 1.0;
-        //let formatted2 = format!("{} ", prob);
+        if ciudades_visitar.len() == 0 {
+            println!("true");
+        } else {
+            println!("{}", ciudades_visitar.len());
+        }
 
-        let formatted3 = format!("{} {}", conexion.unwrap().ciudad1,conexion.unwrap().ciudad2);
 
-        let res = format!("{} {} {}",formatted1,formatted2, formatted3);
-        res
+        if conexion.ciudad1 != 0 && conexion.ciudad2 != 0{
+            *conexion.feromona.lock().unwrap() += AUMENTO_FEROMONA;
+
+            let mut prob = conexion.probabilidad.lock().unwrap();
+            let formatted1 = format!("{} ", prob);
+            *prob = (*conexion.probabilidad_base.lock().unwrap()) * (*conexion.feromona.lock().unwrap());
+            //let formatted2 = format!("{} ", prob);
+
+            let formatted3 = format!("{} {}", conexion.ciudad1,conexion.ciudad2);
+
+            let res = format!("{} {} {}",formatted1,formatted3,ant.ciudad);
+            return res
+        } else {
+            let res = format!("nada {}", ant.ciudad);
+            return res
+        }
 }
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
@@ -64,7 +91,7 @@ fn main() {
 
     let semillas: Vec<u32> = to_u32_vec(c.get_array("seeds").expect("No hay lista de semillas declarada en Ajustes.toml"));
     let conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
-
+    //println!("{}", conjunto_ciudades.len());
     let mut ants: QueueParll = QueueParll::new();
 
     for semilla in semillas {
@@ -89,10 +116,12 @@ fn main() {
             let evap = ant_evap.1;
             let tx = tx.clone();
             let matriz = matriz.clone();
+            let a_visitar = conjunto_ciudades.clone();
             pool.execute(move|| {
-                tx.send(computation(matriz,ant,evap)).unwrap();
+                tx.send(recorrido_hormiga(matriz,a_visitar,ant,evap)).unwrap();
             });
-            println!("{:?}",rx.recv().unwrap());
+            rx.recv();
+            //println!("{:?}",rx.recv().unwrap());
         }
 
     }

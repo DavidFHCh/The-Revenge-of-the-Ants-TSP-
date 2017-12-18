@@ -2,7 +2,7 @@ extern crate rusqlite;
 use std::path::Path;
 use self::rusqlite::Connection;
 use structs::conexion::Conexion;
-use std::sync::{Arc,Mutex};
+use std::sync::Arc;
 
 const NUM_CIUDADES: usize = 1093;
 
@@ -25,12 +25,7 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
     let mut consulta2 = conexion.prepare("SELECT * FROM connections").expect("NO SE PUDO COMPLETAR LA CONEXION 2.");
 
     let con_it = consulta2.query_map(&[], |renglon| {
-        Conexion{
-            ciudad1: renglon.get(0),
-            ciudad2: renglon.get(1),
-            distancia: renglon.get(2),
-            probabilidad: Mutex::new(1.0),
-        }
+        Conexion::new(renglon.get(0),renglon.get(1),renglon.get(2),0.5)
     }).unwrap();
 
 
@@ -40,13 +35,7 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
     for _v in 0..NUM_CIUDADES {
         let mut ceros = Vec::with_capacity(NUM_CIUDADES);
         for _i in 0..NUM_CIUDADES {
-            ceros.push(
-                Conexion{
-                ciudad1: 0,
-                ciudad2: 0,
-                distancia: 0.0,
-                probabilidad: Mutex::new(0.0),
-            });
+            ceros.push(Conexion::new(0,0,0.0,0.0));
         }
         m_adyacencias.push(ceros);
     }
@@ -61,12 +50,7 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
     let mut consulta3 = conexion.prepare("SELECT * FROM connections").expect("NO SE PUDO COMPLETAR LA CONEXION 2.");
 
     let con_it_2 = consulta3.query_map(&[], |renglon| {
-        Conexion{
-            ciudad1: renglon.get(0),
-            ciudad2: renglon.get(1),
-            distancia: renglon.get(2),
-            probabilidad: Mutex::new(1.0),
-        }
+        Conexion::new(renglon.get(0),renglon.get(1),renglon.get(2),0.5)
     }).unwrap();
 
     for arista in con_it_2 {
@@ -79,22 +63,31 @@ pub fn get_ciudades() -> Result<(Vec<usize>,Arc<Vec<Vec<Conexion>>>), rusqlite::
     for i in 0..NUM_CIUDADES {
         ciudades.push(i);
     }
+
+    //mover esto a main, solo se pondra la probabilidad de las aristas que se puedan usar en el camino, es decir, todas las que conecten a las del conjunto de entrada.
     let mut sum = 0.0;
     for aristas in &m_adyacencias {
+        sum = 0.0;
+        let mut mayor = 0.0;
         for arista in aristas {
-            sum += arista.distancia;
+            if arista.distancia > mayor {
+                mayor = arista.distancia;
+            }
+        }
+        mayor = mayor * 1.1;
+
+        for arista in aristas {
+            sum += (mayor - arista.distancia);
+        }
+        for arista in aristas {
+            *arista.probabilidad_base.lock().unwrap() = (mayor - arista.distancia)/sum;
+            *arista.probabilidad.lock().unwrap() = (mayor - arista.distancia)/sum;
         }
     }
 
-    for aristas in &m_adyacencias {
-        for arista in aristas {
-            *arista.probabilidad.lock().unwrap() = arista.distancia/sum;
-        }
-    }
+
+
 
     Ok((ciudades,Arc::new(m_adyacencias)))
 
 }
-
-
-//https://www.reddit.com/r/rust/comments/4cxpym/sharing_a_mutable_vector_across_multiple_threads/?st=jaur6k4q&sh=ccdbea33
