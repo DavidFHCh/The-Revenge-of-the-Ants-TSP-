@@ -6,6 +6,7 @@ pub struct Ant{
 }
 
 
+
 impl Ant{
     pub fn new(id :usize) -> Self{
         Ant {
@@ -14,7 +15,12 @@ impl Ant{
     }
 
     pub fn muevete(&mut self,matriz: &Arc<Vec<Vec<Conexion>>>, ciudades_visitar:&Vec<usize>) -> (usize,f64) {
-        self.ciudad = 15;
-        (0,0.0)
+        let mut probs = 0.0;
+        for city in ciudades_visitar {
+            probs += matriz[self.ciudad][city].probabilidad.lock().unwrap();
+        }
+        //tienes que agregar el rng
+        matriz[self.ciudad]
+        (15,0.0)
     }
 }
