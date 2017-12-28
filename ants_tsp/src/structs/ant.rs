@@ -26,8 +26,22 @@ impl Ant{
         for city in ciudades_visitar {
             probs += *matriz[self.ciudad][*city].probabilidad.lock().unwrap();
         }
-        //tienes que agregar el rng
+
+        //aqui tienes la suma de probs, se da un num aleatorio en el rango 0..probs y se ve a cual corresponde, de acuerdo al orden de ciudades_visitar.
+
+        let between = Range::new(0.0,probs);
+        let mut val_obt = between.ind_sample(&mut self.rng);
+        let mut dis = 0.0;
+        for city in ciudades_visitar {
+            if val_obt <= *matriz[self.ciudad][*city].probabilidad.lock().unwrap(){
+                self.ciudad = city.clone();
+                dis = matriz[self.ciudad][*city].distancia.clone();
+            } else {
+                val_obt -= *matriz[self.ciudad][*city].probabilidad.lock().unwrap();
+            }
+
+        }
         //matriz[self.ciudad]
-        (15,0.0)
+        (self.ciudad,dis)
     }
 }

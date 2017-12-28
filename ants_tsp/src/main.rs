@@ -38,7 +38,7 @@ fn recorrido_hormiga(matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<us
             let movimiento = ant.muevete(&matriz,&ciudades_visitar);
             solucion.f_obj += movimiento.1;
             solucion.solucion.push(movimiento.0.clone());
-            //ciudades_visitar.remove_item(&movimiento.0);
+            ciudades_visitar.remove_item(&movimiento.0);
             //se eliminara el que se visito afuera de la funcion
         }
 
