@@ -25,12 +25,13 @@ use config::{Config, File, FileFormat, Value};
 
 static RECORRIDOS: usize = 2000;
 static AUMENTO_FEROMONA: f64 = 0.2;
-static DISMINUCION_FEROMONA: f64 = 0.2;
+static DISMINUCION_FEROMONA: f64 = 0.05;
 
-fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> String{
+fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> Solucion{
         //let mut shared = matriz;
         let mut solucion = Solucion::new();
         let num_c = ciudades_visitar.len();
+        let cities = ciudades_visitar.clone();
         for i in 0..num_c {
             let ciudad1 = ant.ciudad.clone();
             let movimiento = ant.muevete(&matriz,&ciudades_visitar);
@@ -41,14 +42,28 @@ fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Ve
             let mut con = &matriz[ciudad1][ciudad2];
             *con.feromona.lock().unwrap() += AUMENTO_FEROMONA;
             //se eliminara el que se visito afuera de la funcion
+            *con.probabilidad.lock().unwrap() = (*con.probabilidad_base.lock().unwrap()) * (*con.feromona.lock().unwrap());
+        }
+        if evaporar {
+            for cons in 0..matriz.len() {
+                for con1 in 0..matriz[cons].len() {
+                    let mut con = &matriz[con1][con1];
+                    *con.feromona.lock().unwrap() -= DISMINUCION_FEROMONA;
+                    *con.probabilidad.lock().unwrap() = (*con.probabilidad_base.lock().unwrap()) * (*con.feromona.lock().unwrap());
+                }
+            }
         }
 
+        /*
         if ciudades_visitar.len() == 0 {
             println!("true");
         } else {
-            println!("{}", ciudades_visitar.len());
+            println!("{}",ciudades_visitar.len());
         }
-
+        */
+        println!("-------------------");
+        println!("{:?}", solucion.solucion);
+        println!("{:?}", solucion.f_obj);
 /*
         if conexion.ciudad1 != 0 && conexion.ciudad2 != 0{
             *conexion.feromona.lock().unwrap() += AUMENTO_FEROMONA;
@@ -68,8 +83,7 @@ fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Ve
         }
         */
 
-        let res = format!("Exito");
-        res
+        solucion
 }
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
@@ -89,6 +103,7 @@ fn to_u32_vec(values: Vec<Value>) -> Vec<u32> {
 }
 
 fn main() {
+    let mut soluciones = Vec::new();
     let mut c = Config::new();
     let ciudades_matriz = get_ciudades().unwrap();
     let matriz = ciudades_matriz.1;
@@ -102,9 +117,9 @@ fn main() {
     for semilla in semillas {
         for _x in 0..RECORRIDOS {
             let seed = [semilla, semilla*3, semilla*5, semilla*7];
-            let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+
             //let between = Range::new(0,conjunto_ciudades.len());
-            let ant: Ant = Ant::new(rng,conjunto_ciudades.len());
+            let ant: Ant = Ant::new(seed,conjunto_ciudades.len());
             ants.push(ant);
         }
     }
@@ -112,25 +127,32 @@ fn main() {
     let n_workers = num_cpus::get();
     let n_jobs = RECORRIDOS;
     let pool = ThreadPool::new(n_workers);
-
+    let matriz1 = matriz.clone();
     let (tx, rx) = channel();
-
+    let mut contador = 0;
     for _ in 0..n_jobs {
         let ant_evap = ants.pop();
         let ant = ant_evap.0;
         let evap = ant_evap.1;
         let tx = tx.clone();
         let matriz = matriz.clone();
+
         let a_visitar = conjunto_ciudades.clone();
 
         pool.execute(move|| {
             tx.send(recorrido_hormiga(matriz,a_visitar,ant,evap)).unwrap();
         });
-        rx.recv();
+        //rx.recv();
+
+        soluciones.push(rx.recv().unwrap());
         //println!("{:?}",rx.recv().unwrap());
     }
-
-
-
+    /*
+    for sol in soluciones {
+        println!("-------------------");
+        println!("{:?}", sol.solucion);
+        println!("{:?}", sol.f_obj);
+    }
+    */
     //println!("{:?}",rx.recv().unwrap());
 }

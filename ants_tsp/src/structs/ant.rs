@@ -13,7 +13,8 @@ pub struct Ant{
 
 
 impl Ant{
-    pub fn new(mut rng: XorShiftRng,num_ciudades: usize) -> Self{
+    pub fn new(seed: [u32;4],num_ciudades: usize) -> Self{
+        let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
         let between = Range::new(0,num_ciudades);
         Ant {
             ciudad: between.ind_sample(&mut rng),
@@ -33,7 +34,7 @@ impl Ant{
         let mut val_obt = between.ind_sample(&mut self.rng);
         let mut dis = 0.0;
         for city in ciudades_visitar {
-            if val_obt <= *matriz[self.ciudad][*city].probabilidad.lock().unwrap(){
+            if val_obt < *matriz[self.ciudad][*city].probabilidad.lock().unwrap(){
                 self.ciudad = city.clone();
                 dis = matriz[self.ciudad][*city].distancia.clone();
             } else {
