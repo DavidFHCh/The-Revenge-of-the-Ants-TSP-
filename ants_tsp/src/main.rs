@@ -27,18 +27,19 @@ static RECORRIDOS: usize = 2000;
 static AUMENTO_FEROMONA: f64 = 0.2;
 static DISMINUCION_FEROMONA: f64 = 0.2;
 
-fn recorrido_hormiga(matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> String{
+fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> String{
         //let mut shared = matriz;
-        let conexiones = rand::thread_rng().choose(&matriz);
-        let mut con = rand::thread_rng().choose(&conexiones.unwrap());
-        let mut conexion = con.unwrap();
         let mut solucion = Solucion::new();
         let num_c = ciudades_visitar.len();
         for i in 0..num_c {
+            let ciudad1 = ant.ciudad.clone();
             let movimiento = ant.muevete(&matriz,&ciudades_visitar);
             solucion.f_obj += movimiento.1;
             solucion.solucion.push(movimiento.0.clone());
-            ciudades_visitar.remove_item(&movimiento.0);
+            ciudades_visitar.remove_item(&movimiento.0.clone());
+            let ciudad2 = ant.ciudad.clone();
+            let mut con = &matriz[ciudad1][ciudad2];
+            *con.feromona.lock().unwrap() += AUMENTO_FEROMONA;
             //se eliminara el que se visito afuera de la funcion
         }
 
@@ -48,7 +49,7 @@ fn recorrido_hormiga(matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<us
             println!("{}", ciudades_visitar.len());
         }
 
-
+/*
         if conexion.ciudad1 != 0 && conexion.ciudad2 != 0{
             *conexion.feromona.lock().unwrap() += AUMENTO_FEROMONA;
 
@@ -65,6 +66,10 @@ fn recorrido_hormiga(matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<us
             let res = format!("nada {}", ant.ciudad);
             return res
         }
+        */
+
+        let res = format!("Exito");
+        res
 }
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
