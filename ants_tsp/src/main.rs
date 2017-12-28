@@ -95,36 +95,37 @@ fn main() {
     let mut ants: QueueParll = QueueParll::new();
 
     for semilla in semillas {
-        let seed = [semilla, semilla*3, semilla*5, semilla*7];
-        let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
-
-
         for _x in 0..RECORRIDOS {
-            let between = Range::new(0,conjunto_ciudades.len());
-            let ant: Ant = Ant::new(between.ind_sample(&mut rng));
+            let seed = [semilla, semilla*3, semilla*5, semilla*7];
+            let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+            //let between = Range::new(0,conjunto_ciudades.len());
+            let ant: Ant = Ant::new(rng,conjunto_ciudades.len());
             ants.push(ant);
         }
-
-        let n_workers = num_cpus::get();
-        let n_jobs = RECORRIDOS;
-        let pool = ThreadPool::new(n_workers);
-
-        let (tx, rx) = channel();
-        for _ in 0..n_jobs {
-            let ant_evap = ants.pop();
-            let ant = ant_evap.0;
-            let evap = ant_evap.1;
-            let tx = tx.clone();
-            let matriz = matriz.clone();
-            let a_visitar = conjunto_ciudades.clone();
-            pool.execute(move|| {
-                tx.send(recorrido_hormiga(matriz,a_visitar,ant,evap)).unwrap();
-            });
-            rx.recv();
-            //println!("{:?}",rx.recv().unwrap());
-        }
-
     }
+
+    let n_workers = num_cpus::get();
+    let n_jobs = RECORRIDOS;
+    let pool = ThreadPool::new(n_workers);
+
+    let (tx, rx) = channel();
+
+    for _ in 0..n_jobs {
+        let ant_evap = ants.pop();
+        let ant = ant_evap.0;
+        let evap = ant_evap.1;
+        let tx = tx.clone();
+        let matriz = matriz.clone();
+        let a_visitar = conjunto_ciudades.clone();
+
+        pool.execute(move|| {
+            tx.send(recorrido_hormiga(matriz,a_visitar,ant,evap)).unwrap();
+        });
+        rx.recv();
+        //println!("{:?}",rx.recv().unwrap());
+    }
+
+
 
     //println!("{:?}",rx.recv().unwrap());
 }
