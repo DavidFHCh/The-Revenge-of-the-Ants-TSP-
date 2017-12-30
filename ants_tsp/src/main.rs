@@ -9,14 +9,14 @@ extern crate rand;
 extern crate config;
 
 use ants_tsp as ants;
-use std::sync::{Arc};
+//use std::sync::{Arc};
 use ants::conexion_bd::get_ciudades;
 use rand::{XorShiftRng, SeedableRng, Rng};
 use threadpool::ThreadPool;
 use std::sync::mpsc::channel;
 use ants_tsp::structs::conexion::Conexion;
-use ants_tsp::structs::queue_parll::QueueParll;
 use ants_tsp::structs::ant::Ant;
+use ants_tsp::structs::city::City;
 use ants_tsp::structs::solucion::Solucion;
 use rand::distributions::{IndependentSample, Range};
 use config::{Config, File, FileFormat, Value};
@@ -24,67 +24,10 @@ use config::{Config, File, FileFormat, Value};
 
 
 static RECORRIDOS: usize = 2000;
-static AUMENTO_FEROMONA: f64 = 0.2;
-static DISMINUCION_FEROMONA: f64 = 0.05;
+static NUM_HORMIGAS: usize = 20;
+static AUMENTO_FEROMONA: f64 = 0.0;
+static DISMINUCION_FEROMONA: f64 = 20.0;
 
-fn recorrido_hormiga(mut matriz: Arc<Vec<Vec<Conexion>>>,mut ciudades_visitar:Vec<usize>,mut ant: Ant, evaporar: bool) -> Solucion{
-        //let mut shared = matriz;
-        let mut solucion = Solucion::new();
-        let num_c = ciudades_visitar.len();
-        let cities = ciudades_visitar.clone();
-        for i in 0..num_c {
-            let ciudad1 = ant.ciudad.clone();
-            let movimiento = ant.muevete(&matriz,&ciudades_visitar);
-            solucion.f_obj += movimiento.1;
-            solucion.solucion.push(movimiento.0.clone());
-            ciudades_visitar.remove_item(&movimiento.0.clone());
-            let ciudad2 = ant.ciudad.clone();
-            let mut con = &matriz[ciudad1][ciudad2];
-            *con.feromona.lock().unwrap() += AUMENTO_FEROMONA;
-            //se eliminara el que se visito afuera de la funcion
-            *con.probabilidad.lock().unwrap() = (*con.probabilidad_base.lock().unwrap()) * (*con.feromona.lock().unwrap());
-        }
-        if evaporar {
-            for cons in 0..matriz.len() {
-                for con1 in 0..matriz[cons].len() {
-                    let mut con = &matriz[con1][con1];
-                    *con.feromona.lock().unwrap() -= DISMINUCION_FEROMONA;
-                    *con.probabilidad.lock().unwrap() = (*con.probabilidad_base.lock().unwrap()) * (*con.feromona.lock().unwrap());
-                }
-            }
-        }
-
-        /*
-        if ciudades_visitar.len() == 0 {
-            println!("true");
-        } else {
-            println!("{}",ciudades_visitar.len());
-        }
-        */
-        println!("-------------------");
-        println!("{:?}", solucion.solucion);
-        println!("{:?}", solucion.f_obj);
-/*
-        if conexion.ciudad1 != 0 && conexion.ciudad2 != 0{
-            *conexion.feromona.lock().unwrap() += AUMENTO_FEROMONA;
-
-            let mut prob = conexion.probabilidad.lock().unwrap();
-            let formatted1 = format!("{} ", prob);
-            *prob = (*conexion.probabilidad_base.lock().unwrap()) * (*conexion.feromona.lock().unwrap());
-            //let formatted2 = format!("{} ", prob);
-
-            let formatted3 = format!("{} {}", conexion.ciudad1,conexion.ciudad2);
-
-            let res = format!("{} {} {}",formatted1,formatted3,ant.ciudad);
-            return res
-        } else {
-            let res = format!("nada {}", ant.ciudad);
-            return res
-        }
-        */
-
-        solucion
-}
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
     let mut v = Vec::with_capacity(values.len());
@@ -102,57 +45,45 @@ fn to_u32_vec(values: Vec<Value>) -> Vec<u32> {
     v
 }
 
+fn set_all_false(conj_ciudades:&mut Vec<City>) {
+    for city in conj_ciudades {
+        city.set_false_visited();
+    }
+}
+
 fn main() {
-    let mut soluciones = Vec::new();
+    //let mut soluciones = Vec::new();
     let mut c = Config::new();
     let ciudades_matriz = get_ciudades().unwrap();
     let matriz = ciudades_matriz.1;
     c.merge(File::new("Ajustes", FileFormat::Toml).required(true)).expect("NO HAY ARCHIVO DE CONFIGURACION 'Ajustes.toml'");
 
     let semillas: Vec<u32> = to_u32_vec(c.get_array("seeds").expect("No hay lista de semillas declarada en Ajustes.toml"));
-    let conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
+    let mut conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
     //println!("{}", conjunto_ciudades.len());
-    let mut ants: QueueParll = QueueParll::new();
+    //let conjunto_ciudades_1 = conjunto_ciudades.unwrap();
+    let mut ciudades_a_visitar = Vec::new();
+    for ciudad in &conjunto_ciudades {
+        ciudades_a_visitar.push(City::new(*ciudad));
+    }
+
+    println!("{:?}", conjunto_ciudades);
+    let mut hormigas = Vec::new();
+    for num in 0..NUM_HORMIGAS {
+        hormigas.push(Ant::new(0));
+    }
 
     for semilla in semillas {
-        for _x in 0..RECORRIDOS {
-            let seed = [semilla, semilla*3, semilla*5, semilla*7];
+        let seed = [semilla, semilla*3, semilla*5, semilla*7];
+        let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+        for _i in 0..RECORRIDOS {
+            for hormiga in &mut hormigas {
+                set_all_false(&mut ciudades_a_visitar);
+                hormiga.set_ciudad(rng.choose(&ciudades_a_visitar).unwrap().ciudad);
 
-            //let between = Range::new(0,conjunto_ciudades.len());
-            let ant: Ant = Ant::new(seed,conjunto_ciudades.len());
-            ants.push(ant);
+            }
         }
     }
 
-    let n_workers = num_cpus::get();
-    let n_jobs = RECORRIDOS;
-    let pool = ThreadPool::new(n_workers);
-    let matriz1 = matriz.clone();
-    let (tx, rx) = channel();
-    let mut contador = 0;
-    for _ in 0..n_jobs {
-        let ant_evap = ants.pop();
-        let ant = ant_evap.0;
-        let evap = ant_evap.1;
-        let tx = tx.clone();
-        let matriz = matriz.clone();
 
-        let a_visitar = conjunto_ciudades.clone();
-
-        pool.execute(move|| {
-            tx.send(recorrido_hormiga(matriz,a_visitar,ant,evap)).unwrap();
-        });
-        //rx.recv();
-
-        soluciones.push(rx.recv().unwrap());
-        //println!("{:?}",rx.recv().unwrap());
-    }
-    /*
-    for sol in soluciones {
-        println!("-------------------");
-        println!("{:?}", sol.solucion);
-        println!("{:?}", sol.f_obj);
-    }
-    */
-    //println!("{:?}",rx.recv().unwrap());
 }
