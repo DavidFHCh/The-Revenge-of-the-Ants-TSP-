@@ -76,11 +76,15 @@ fn main() {
     for semilla in semillas {
         let seed = [semilla, semilla*3, semilla*5, semilla*7];
         let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+        let mut solucion = Solucion::new(semilla as usize);
         for _i in 0..RECORRIDOS {
             for hormiga in &mut hormigas {
                 set_all_false(&mut ciudades_a_visitar);
-                hormiga.set_ciudad(rng.choose(&ciudades_a_visitar).unwrap().ciudad);
-
+                let mut ciudad_aux = rng.choose_mut(&mut ciudades_a_visitar).unwrap();
+                ciudad_aux.set_true_visited();
+                hormiga.set_ciudad(ciudad_aux.ciudad);
+                solucion.solucion.push(ciudad_aux.ciudad);
+                //todo lo del movimiento de la hormiga
             }
         }
     }
