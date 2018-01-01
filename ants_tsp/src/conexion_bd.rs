@@ -25,7 +25,7 @@ pub fn get_ciudades() -> Result<(Vec<City>,Vec<Vec<Conexion>>), rusqlite::Error>
     let mut consulta2 = conexion.prepare("SELECT * FROM connections").expect("NO SE PUDO COMPLETAR LA CONEXION 2.");
 
     let con_it = consulta2.query_map(&[], |renglon| {
-        Conexion::new(renglon.get(0),renglon.get(1),renglon.get(2),0.5)
+        Conexion::new(renglon.get(0),renglon.get(1),renglon.get(2),0.0)
     }).unwrap();
 
 
@@ -51,30 +51,6 @@ pub fn get_ciudades() -> Result<(Vec<City>,Vec<Vec<Conexion>>), rusqlite::Error>
     for i in 0..NUM_CIUDADES {
         ciudades.push(City::new(i));
     }
-
-    let mut sum = 0.0;
-    for  aristas in &mut m_adyacencias {
-        sum = 0.0;
-        let mut mayor = 0.0;
-        for arista in aristas.clone() {
-            if arista.distancia > mayor {
-                mayor = arista.distancia;
-            }
-        }
-        mayor = mayor * 1.1;
-
-        for arista in aristas.clone() {
-            sum += mayor - arista.distancia;
-        }
-        for arista in aristas {
-            let dist = arista.distancia;
-            arista.set_probabilidad_base((mayor - dist) / sum);
-            arista.set_probabilidad((mayor - dist)/sum);
-        }
-    }
-
-
-
 
     Ok((ciudades,m_adyacencias))
 

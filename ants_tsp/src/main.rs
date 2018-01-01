@@ -12,8 +12,6 @@ use ants_tsp as ants;
 //use std::sync::{Arc};
 use ants::conexion_bd::get_ciudades;
 use rand::{XorShiftRng, SeedableRng, Rng};
-use threadpool::ThreadPool;
-use std::sync::mpsc::channel;
 use ants_tsp::structs::conexion::Conexion;
 use ants_tsp::structs::ant::Ant;
 use ants_tsp::structs::city::City;
@@ -51,15 +49,30 @@ fn set_all_false(conj_ciudades:&mut Vec<City>) {
     }
 }
 
+fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
+    let mut sum = 0.0;
+    for city in conj_ciudades {
+        for city_1 in conj_ciudades {
+            sum += matriz[city.ciudad][city_1.ciudad].distancia;
+        }
+    }
+
+    for city in conj_ciudades {
+        for city_1 in conj_ciudades {
+            matriz[city.ciudad][city_1.ciudad].visibilidad = matriz[city.ciudad][city_1.ciudad].distancia/sum;
+        }
+    }
+}
+
 fn main() {
     //let mut soluciones = Vec::new();
     let mut c = Config::new();
     let ciudades_matriz = get_ciudades().unwrap();
-    let matriz = ciudades_matriz.1;
+    let mut matriz = ciudades_matriz.1;
     c.merge(File::new("Ajustes", FileFormat::Toml).required(true)).expect("NO HAY ARCHIVO DE CONFIGURACION 'Ajustes.toml'");
 
     let semillas: Vec<u32> = to_u32_vec(c.get_array("seeds").expect("No hay lista de semillas declarada en Ajustes.toml"));
-    let mut conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
+    let conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
     //println!("{}", conjunto_ciudades.len());
     //let conjunto_ciudades_1 = conjunto_ciudades.unwrap();
     let mut ciudades_a_visitar = Vec::new();
@@ -69,21 +82,22 @@ fn main() {
 
     println!("{:?}", conjunto_ciudades);
     let mut hormigas = Vec::new();
-    for num in 0..NUM_HORMIGAS {
+    for _num in 0..NUM_HORMIGAS {
         hormigas.push(Ant::new(0));
     }
-
+    set_visibility(&mut matriz,&ciudades_a_visitar);
     for semilla in semillas {
+        let mut matriz_ind = matriz.clone();
         let seed = [semilla, semilla*3, semilla*5, semilla*7];
         let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
         let mut solucion = Solucion::new(semilla as usize);
         for _i in 0..RECORRIDOS {
             for hormiga in &mut hormigas {
                 set_all_false(&mut ciudades_a_visitar);
-                let mut ciudad_aux = rng.choose_mut(&mut ciudades_a_visitar).unwrap();
+                let ciudad_aux = rng.choose_mut(&mut ciudades_a_visitar).unwrap();
                 ciudad_aux.set_true_visited();
                 hormiga.set_ciudad(ciudad_aux.ciudad);
-                solucion.solucion.push(ciudad_aux.ciudad);
+                hormiga.visitados.push(ciudad_aux.clone());
                 //todo lo del movimiento de la hormiga
             }
         }
