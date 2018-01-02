@@ -21,6 +21,7 @@ impl Ant {
 
     pub fn clean(&mut self) {
         self.ciudad = 0;
+        self.visitados = Vec::new();
     }
 
     pub fn set_ciudad(&mut self, ciudad: usize) {
@@ -59,8 +60,18 @@ impl Ant {
             }
         }
 
-        if selected_city.ciudad == 0 {println!("ERRORRRRRRRRRR", );} else {
-            matriz[self.ciudad][selected_city.ciudad].feromona += aum_ferm;
+        if selected_city.ciudad == 0 {
+            println!("No Factible.", );
+            print!("[", );
+            /*
+            for visit in &self.visitados {
+                print!("{:?},", visit.ciudad);
+            }
+            println!("]", );
+            */
+            self.ciudad = 0;
+        } else {
+            //matriz[self.ciudad][selected_city.ciudad].feromona += aum_ferm;
             self.ciudad = selected_city.ciudad;
             self.visitados.push(selected_city);
         }
