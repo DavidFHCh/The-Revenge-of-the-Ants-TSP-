@@ -27,9 +27,9 @@ impl Ant {
         self.ciudad = ciudad;
     }
 
-
-    pub fn mueve_hormiga(&mut self, matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, mut rng: XorShiftRng, aum_ferm: f64) {
-        self.set_probabilidades(matriz,conj_ciudades);
+/*
+    pub fn aux(&mut self, matriz: &Vec<Vec<Conexion>>,conj_ciudades:  &Vec<City>) -> f64 {
+        //self.set_probabilidades(matriz,conj_ciudades);
         let mut sum_probs = 0.0;
         for city in conj_ciudades.clone() {
             if city.visited == false {
@@ -37,8 +37,15 @@ impl Ant {
             }
         }
 
-        let between = Range::new(0.0,sum_probs);
-        let mut select = between.ind_sample(&mut rng);
+        println!("{:?}", sum_probs);
+        sum_probs
+    }
+*/
+
+    //NO FUNCIONA
+    pub fn mueve_hormiga(&mut self, matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, aum_ferm: f64, select_in: f64) {
+        let mut select = select_in;
+
         let mut selected_city: City = City::new(0);
         for mut city in conj_ciudades {
             if city.visited == false {
@@ -52,7 +59,7 @@ impl Ant {
             }
         }
 
-        if selected_city.ciudad == 0 {} else {
+        if selected_city.ciudad == 0 {println!("ERRORRRRRRRRRR", );} else {
             matriz[self.ciudad][selected_city.ciudad].feromona += aum_ferm;
             self.ciudad = selected_city.ciudad;
             self.visitados.push(selected_city);
@@ -60,6 +67,7 @@ impl Ant {
     }
 
     //Esto se aplica cada vez que se va a mover la hormiga.
+    /*
     fn set_probabilidades(&mut self,matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &Vec<City>) {
         let mut sum = 0.0;
         for vecino in conj_ciudades {
@@ -75,5 +83,6 @@ impl Ant {
         }
 
     }
+    */
 
 }
