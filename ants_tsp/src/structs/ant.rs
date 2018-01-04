@@ -7,13 +7,15 @@ use self::rand::distributions::{IndependentSample, Range};
 
 #[derive(Clone)]
 pub struct Ant{
+    pub id: usize,
     pub ciudad : usize,
     pub visitados: Vec<City>,
 }
 
 impl Ant {
-    pub fn new(city: usize) -> Self {
+    pub fn new(city: usize,id1: usize) -> Self {
         Ant {
+            id: id1,
             ciudad: city,
             visitados: Vec::new(),
         }
@@ -61,6 +63,7 @@ impl Ant {
         }
 
         if selected_city.ciudad == 0 {
+            println!("----------------------------------", );
             println!("No Factible.", );
             print!("[", );
             /*

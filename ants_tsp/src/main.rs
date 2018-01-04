@@ -10,6 +10,7 @@ extern crate config;
 
 use ants_tsp as ants;
 //use std::sync::{Arc};
+use std::env;
 use ants::conexion_bd::get_ciudades;
 use rand::{XorShiftRng, SeedableRng, Rng};
 use ants_tsp::structs::conexion::Conexion;
@@ -23,7 +24,7 @@ use config::{Config, File, FileFormat, Value};
 
 static RECORRIDOS: usize = 400;
 static NUM_HORMIGAS: usize = 20;
-static AUMENTO_FEROMONA: f64 = 0.1;
+static AUMENTO_FEROMONA: f64 = 0.25;
 static DISMINUCION_FEROMONA: f64 = 0.85;
 
 
@@ -50,6 +51,7 @@ fn set_all_false(conj_ciudades:&mut Vec<City>) {
 }
 
 fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
+    let max_dist = 4982205.69 + 1000000.0;
     let mut sum = 0.0;
     for city in conj_ciudades {
         for city_1 in conj_ciudades {
@@ -59,13 +61,16 @@ fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
 
     for city in conj_ciudades {
         for city_1 in conj_ciudades {
-            matriz[city.ciudad][city_1.ciudad].visibilidad = matriz[city.ciudad][city_1.ciudad].distancia/sum;
+            matriz[city.ciudad][city_1.ciudad].visibilidad = (max_dist - matriz[city.ciudad][city_1.ciudad].distancia)/sum;
         }
     }
 }
 
 fn main() {
     //let mut soluciones = Vec::new();
+    let args: Vec<String> = env::args().collect();
+
+
     let mut c = Config::new();
     let ciudades_matriz = get_ciudades().unwrap();
     let mut matriz = ciudades_matriz.1;
@@ -81,8 +86,8 @@ fn main() {
     }
 
     let mut hormigas = Vec::new();
-    for _num in 0..NUM_HORMIGAS {
-        let hormiga = Ant::new(0);
+    for num in 0..NUM_HORMIGAS {
+        let hormiga = Ant::new(0,num);
 
         hormigas.push(hormiga);
     }
@@ -102,13 +107,29 @@ fn main() {
                 set_all_false(&mut ciudades_a_visitar);
                 let leng = ciudades_a_visitar.len();
                 if hormiga.visitados.len() == 0 {
-                    let ciudad_aux_rang = Range::new(0,leng);
-                    let ind = ciudad_aux_rang.ind_sample(&mut rng);
-                    let ciudad_aux = &mut ciudades_a_visitar[ind];
-                    ciudad_aux.set_true_visited();
+                    if args.len() < 2 {
+                        let ciudad_aux_rang = Range::new(0,leng);
+                        let ind = ciudad_aux_rang.ind_sample(&mut rng);
+                        let ciudad_aux = &mut ciudades_a_visitar[ind];
+                        ciudad_aux.set_true_visited();
 
-                    hormiga.set_ciudad(ciudad_aux.ciudad);
-                    hormiga.visitados.push(ciudad_aux.clone());
+                        hormiga.set_ciudad(ciudad_aux.ciudad);
+                        hormiga.visitados.push(ciudad_aux.clone());
+                    } else {
+                        let mut ciudad_ind = 0;
+                        let ciudad_ini = args[1].parse::<usize>().unwrap();
+                        for ciudad1_index in 0..ciudades_a_visitar.len() {
+                            if ciudades_a_visitar[ciudad1_index].ciudad == ciudad_ini {
+                                ciudad_ind = ciudad1_index.clone();
+                                break;
+                            }
+                        }
+                        let ciudad_aux =  &mut ciudades_a_visitar[ciudad_ind];
+                        ciudad_aux.set_true_visited();
+
+                        hormiga.set_ciudad(ciudad_aux.ciudad);
+                        hormiga.visitados.push(ciudad_aux.clone());
+                    }
                 }
                 //todo lo del movimiento de la hormiga
                 while hormiga.visitados.len() <  leng{
@@ -139,16 +160,19 @@ fn main() {
 
                 if hormiga.visitados.len() == ciudades_a_visitar.len() {
                     for ci in 0..hormiga.visitados.len()-1 {
-                        println!("Factible yes", );
-                        print!("[", );
-                        for visit in &hormiga.visitados {
-                            print!("{:?},", visit.ciudad);
-                        }
-                        println!("]", );
                         matriz_ind[hormiga.visitados[ci].ciudad][hormiga.visitados[ci+1].ciudad].feromona += AUMENTO_FEROMONA;
                     }
+                    println!("----------------------------------", );
+                    println!("{:?}",args);
+                    println!("{:?}", hormiga.id);
+                    println!("Factible yes", );
+                    print!("[", );
+                    for visit in &hormiga.visitados {
+                        print!("{:?},", visit.ciudad);
+                    }
+                    println!("]", );
                 }
-
+                hormiga.clean();
             }
             for cons in &mut matriz_ind {
                 for mut con in cons {
