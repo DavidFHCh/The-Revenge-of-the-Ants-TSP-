@@ -187,7 +187,7 @@ fn main() {
                 hormiga.clean();
             }// termina hormigas
             for cons in &mut matriz_ind {
-                for mut con in cons {
+                for con in cons {
                     con.feromona = con.feromona * DISMINUCION_FEROMONA;
                 }
             }

@@ -52,7 +52,7 @@ impl Ant {
         let mut select = select_in;
 
         let mut selected_city: City = City::new(0);
-        for mut city in conj_ciudades {
+        for city in conj_ciudades {
             if city.visited == false {
                 let prb = &matriz[self.ciudad][city.ciudad].probabilidad;
                 if select <= *prb {
