@@ -32,73 +32,80 @@ impl Ant {
         self.ciudad = ciudad;
     }
 
-/*
-    pub fn aux(&mut self, matriz: &Vec<Vec<Conexion>>,conj_ciudades:  &Vec<City>) -> f64 {
-        //self.set_probabilidades(matriz,conj_ciudades);
-        let mut sum_probs = 0.0;
-        for city in conj_ciudades.clone() {
-            if city.visited == false {
-                sum_probs += matriz[self.ciudad][city.ciudad].probabilidad;
-            }
-        }
 
-        println!("{:?}", sum_probs);
-        sum_probs
-    }
-*/
-
-    //NO FUNCIONA
-    pub fn mueve_hormiga(&mut self, matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, select_in: f64) {
-        let mut select = select_in;
-
-        let mut selected_city: City = City::new(0);
-        for city in conj_ciudades {
-            if city.visited == false {
-                let prb = &matriz[self.ciudad][city.ciudad].probabilidad;
-                if select <= *prb {
-                    city.set_true_visited();
-                    selected_city = city.clone();
-                    break;
+    fn ordena(&mut self, a_ordenar: Vec<(usize,usize,&f64)>) -> Vec<(usize,usize,f64)>{
+        let mut ordenado = Vec::new();
+        for i in a_ordenar {
+            let f = *i.2;
+            if ordenado.len() == 0 {
+                ordenado.insert(0,(i.clone().0,i.clone().1,f));
+            } else {
+                let mut j = 0;
+                while f >= ordenado[j].2 {
+                    if j == ordenado.len()-1 {
+                        break;
+                    } else {
+                        j += 1;
+                    }
                 }
-                select -= *prb;
+
+                ordenado.insert(j,(i.clone().0,i.clone().1,f));
             }
         }
+        let mut ini = 0;
+        for i in 1..ordenado.len() {
+            if ordenado[ini] >= ordenado[i] {
+                ordenado.swap(ini,i);
+                ini+=1;
+            } else {break;}
+        }
+
+        ordenado
+    }
+
+
+    pub fn mueve_hormiga(&mut self, matriz: &Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, select_in: f64) -> bool {
+        let mut select = select_in;
+        let mut selected_city: City = City::new(0);
+        //let len = conj_ciudades.len();
+        let mut probs_orden = Vec::new();
+
+        for city_index in 0..conj_ciudades.len() {
+            let city = &conj_ciudades[city_index];
+            if city.visited == false && &matriz[self.ciudad][city.ciudad].distancia != &0.0{
+                probs_orden.push((self.ciudad,city_index,&matriz[self.ciudad][city.ciudad].probabilidad));
+            }
+        }
+
+        let probs_ordenadas = self.ordena(probs_orden);
+
+        for prob in probs_ordenadas {
+            //println!("{:?} {}", select, prob.2);
+            if select <= prob.2 {
+                conj_ciudades[prob.1].set_true_visited();
+                selected_city = conj_ciudades[prob.1].clone();
+                break;
+            }
+            select -= prob.2;
+        }
+
+
 
         if selected_city.ciudad == 0 {
-            println!("----------------------------------", );
-            println!("No Factible.", );
-            print!("[", );
-            /*
-            for visit in &self.visitados {
-                print!("{:?},", visit.ciudad);
-            }
-            println!("]", );
-            */
+
             self.ciudad = 0;
+            return true
         } else {
+            if matriz[self.ciudad][selected_city.ciudad].distancia == 0.0 {
+                self.ciudad = 0;
+                return true
+            }
             self.f_obj += matriz[self.ciudad][selected_city.ciudad].distancia;
             self.ciudad = selected_city.ciudad;
             self.visitados.push(selected_city);
         }
+        return false
     }
 
-    //Esto se aplica cada vez que se va a mover la hormiga.
-    /*
-    fn set_probabilidades(&mut self,matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &Vec<City>) {
-        let mut sum = 0.0;
-        for vecino in conj_ciudades {
-            if vecino.visited == false {
-                sum += matriz[self.ciudad][vecino.ciudad].visibilidad + matriz[self.ciudad][vecino.ciudad].feromona;
-            }
-        }
-
-        for vecino in conj_ciudades {
-            if vecino.visited == false {
-                matriz[self.ciudad][vecino.ciudad].probabilidad = (matriz[self.ciudad][vecino.ciudad].visibilidad + matriz[self.ciudad][vecino.ciudad].feromona)/sum;
-            }
-        }
-
-    }
-    */
 
 }
