@@ -2,14 +2,14 @@ extern crate rand;
 
 use structs::conexion::Conexion;
 use structs::city::City;
-use self::rand::XorShiftRng;
-use self::rand::distributions::{IndependentSample, Range};
+
 
 #[derive(Clone)]
 pub struct Ant{
     pub id: usize,
     pub ciudad : usize,
     pub visitados: Vec<City>,
+    pub f_obj: f64,
 }
 
 impl Ant {
@@ -18,12 +18,14 @@ impl Ant {
             id: id1,
             ciudad: city,
             visitados: Vec::new(),
+            f_obj: 0.0,
         }
     }
 
     pub fn clean(&mut self) {
         self.ciudad = 0;
         self.visitados = Vec::new();
+        self.f_obj = 0.0;
     }
 
     pub fn set_ciudad(&mut self, ciudad: usize) {
@@ -46,7 +48,7 @@ impl Ant {
 */
 
     //NO FUNCIONA
-    pub fn mueve_hormiga(&mut self, matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, aum_ferm: f64, select_in: f64) {
+    pub fn mueve_hormiga(&mut self, matriz: &mut Vec<Vec<Conexion>>,conj_ciudades: &mut Vec<City>, select_in: f64) {
         let mut select = select_in;
 
         let mut selected_city: City = City::new(0);
@@ -74,7 +76,7 @@ impl Ant {
             */
             self.ciudad = 0;
         } else {
-            //matriz[self.ciudad][selected_city.ciudad].feromona += aum_ferm;
+            self.f_obj += matriz[self.ciudad][selected_city.ciudad].distancia;
             self.ciudad = selected_city.ciudad;
             self.visitados.push(selected_city);
         }

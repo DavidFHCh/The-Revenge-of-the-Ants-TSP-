@@ -1,3 +1,6 @@
+use std::f64::INFINITY;
+
+#[derive(Clone)]
 pub struct Solucion {
     pub num_sol: usize,
     pub solucion: Vec<usize>,
@@ -9,7 +12,12 @@ impl Solucion {
         Solucion {
             num_sol: id,
             solucion: Vec::new(),
-            f_obj: 0.0,
+            f_obj: INFINITY,
         }
+    }
+
+    pub fn clean(&mut self) {
+        self.solucion = Vec::new();
+        self.f_obj = 0.0;
     }
 }

@@ -12,7 +12,7 @@ use ants_tsp as ants;
 //use std::sync::{Arc};
 use std::env;
 use ants::conexion_bd::get_ciudades;
-use rand::{XorShiftRng, SeedableRng, Rng};
+use rand::{XorShiftRng, SeedableRng};
 use ants_tsp::structs::conexion::Conexion;
 use ants_tsp::structs::ant::Ant;
 use ants_tsp::structs::city::City;
@@ -22,7 +22,7 @@ use config::{Config, File, FileFormat, Value};
 
 
 
-static RECORRIDOS: usize = 400;
+static RECORRIDOS: usize = 2000;
 static NUM_HORMIGAS: usize = 20;
 static AUMENTO_FEROMONA: f64 = 0.25;
 static DISMINUCION_FEROMONA: f64 = 0.85;
@@ -67,7 +67,7 @@ fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
 }
 
 fn main() {
-    //let mut soluciones = Vec::new();
+    let mut solucion_mejor_global = Solucion::new(0);
     let args: Vec<String> = env::args().collect();
 
 
@@ -96,13 +96,14 @@ fn main() {
 
     set_visibility(&mut matriz,&ciudades_a_visitar);
     for semilla in semillas {
+         println!("----------------------------------------\n\n----------------------------------------\nSemilla: {}", semilla);
         let mut matriz_ind = matriz.clone();
         let seed = [semilla, semilla*3, semilla*5, semilla*7];
         let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
 
 
         let mut solucion = Solucion::new(semilla as usize);
-        for i in 0..RECORRIDOS {
+        for _i in 0..RECORRIDOS {
             for mut hormiga in hormigas.clone() {
                 set_all_false(&mut ciudades_a_visitar);
                 let leng = ciudades_a_visitar.len();
@@ -154,34 +155,58 @@ fn main() {
                     let sum_probs = 1.0;
                     let between = Range::new(0.0,sum_probs);
                     let selection = between.ind_sample(&mut rng);
-                    hormiga.mueve_hormiga(&mut matriz_ind, &mut ciudades_a_visitar,AUMENTO_FEROMONA,selection);
+                    hormiga.mueve_hormiga(&mut matriz_ind, &mut ciudades_a_visitar,selection);
                     //println!("{} {}", leng, hormiga.visitados.len());
-                }
+                }//termina hormiga
 
                 if hormiga.visitados.len() == ciudades_a_visitar.len() {
                     for ci in 0..hormiga.visitados.len()-1 {
                         matriz_ind[hormiga.visitados[ci].ciudad][hormiga.visitados[ci+1].ciudad].feromona += AUMENTO_FEROMONA;
                     }
-                    println!("----------------------------------", );
-                    println!("{:?}",args);
-                    println!("{:?}", hormiga.id);
-                    println!("Factible yes", );
-                    print!("[", );
-                    for visit in &hormiga.visitados {
-                        print!("{:?},", visit.ciudad);
+
+                    if hormiga.f_obj < solucion.f_obj {
+                        /*
+                        println!("----------------------------------", );
+                        println!("{:?}", hormiga.f_obj);
+                        println!("{:?}",args);
+                        println!("{:?}", hormiga.id);
+                        println!("Factible yes", );
+                        print!("[", );
+                        */
+                        let mut sol = Vec::new();
+                        for visit in &hormiga.visitados {
+                            //print!("{:?},", visit.ciudad);
+                            sol.push(visit.ciudad.clone());
+                        }
+                        //println!("]", );
+                        solucion.f_obj = hormiga.f_obj;
+                        solucion.solucion = sol;
                     }
-                    println!("]", );
+
                 }
                 hormiga.clean();
-            }
+            }// termina hormigas
             for cons in &mut matriz_ind {
                 for mut con in cons {
                     con.feromona = con.feromona * DISMINUCION_FEROMONA;
                 }
             }
 
+        }//termina RECORRIDOS
+
+        println!("----------------------------------", );
+        println!("Semilla: {:?}", solucion.num_sol);
+        println!("F_OBJ: {:?}", solucion.f_obj);
+        println!("Factible", );
+        println!("{:?}", solucion.solucion );
+
+        if solucion.f_obj < solucion_mejor_global.f_obj {
+            solucion_mejor_global = solucion.clone();
         }
-    }
-
-
+        solucion.clean();
+    }//termina semillas
+    println!("----------------------------------------\n----------------------------------------\n----------------------------------------\n----------------------------------------", );
+    println!("Mejor semilla: {:?}", solucion_mejor_global.num_sol);
+    println!("Funcion objeto: {:?}", solucion_mejor_global.f_obj);
+    println!("{:?}", solucion_mejor_global.solucion);
 }
