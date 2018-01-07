@@ -19,11 +19,11 @@ use config::{Config, File, FileFormat, Value};
 
 
 
-static RECORRIDOS: usize = 2000;
-static NUM_HORMIGAS: usize = 20;
-static AUMENTO_FEROMONA: f64 = 0.02;
-static DISMINUCION_FEROMONA: f64 = 0.8;
-static FEROMONA_INICIAL: f64 = 0.25;
+static RECORRIDOS: usize = 400;
+static NUM_HORMIGAS: usize = 400;
+static AUMENTO_FEROMONA: f64 = 0.15;
+static DISMINUCION_FEROMONA: f64 = 0.5;
+static FEROMONA_INICIAL: f64 = 0.15;
 
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
