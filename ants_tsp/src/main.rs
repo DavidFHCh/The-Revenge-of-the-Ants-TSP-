@@ -84,7 +84,7 @@ fn main() {
     let conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
     let camino_inicial = to_usize_vec(c.get_array("camino_incial").expect("No hay lista de ciudades iniciales declarada en Ajustes.toml"));
 
-    if camino_inicial.len() != 1 {
+    if camino_inicial.len() != 0 {
         tipo_ayuda = 2;
     }
     //println!("{}", conjunto_ciudades.len());
