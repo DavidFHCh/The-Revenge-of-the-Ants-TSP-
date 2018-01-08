@@ -24,9 +24,9 @@ This will set the city_id of the first city of the path.
 
 3) $cargo run --release
 
-The same as the first one but adding an initial path different from '[]' to the Ajustes.toml file.
+The same as the first one but adding an initial path different from '[]' to the Ajustes.toml file in the last variable.
 
-If you try to run the second and the third way simultaneously, the thrid way will overwrite the second.
+If you try to run the second and the third way simultaneously, the third way will overwrite the second.
 
 -------------------------------------------------------------
 
