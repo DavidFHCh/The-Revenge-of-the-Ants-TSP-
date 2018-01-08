@@ -19,11 +19,11 @@ use config::{Config, File, FileFormat, Value};
 
 
 
-static RECORRIDOS: usize = 400;
-static NUM_HORMIGAS: usize = 400;
+static RECORRIDOS: usize = 4000;
+static NUM_HORMIGAS: usize = 40;
 static AUMENTO_FEROMONA: f64 = 0.15;
-static DISMINUCION_FEROMONA: f64 = 0.5;
-static FEROMONA_INICIAL: f64 = 0.15;
+static DISMINUCION_FEROMONA: f64 = 0.75;
+static FEROMONA_INICIAL: f64 = 0.125;
 
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
@@ -133,7 +133,7 @@ fn main() {
                         hormiga.visitados.push(ciudad_aux.clone());
                     } else {
                         let mut ciudad_ind = 0;
-                        let mut ciudad_ini;
+                        let ciudad_ini;
                         if tipo_ayuda == 1 {
                             ciudad_ini = args[2].parse::<usize>().unwrap();
                         } else {
