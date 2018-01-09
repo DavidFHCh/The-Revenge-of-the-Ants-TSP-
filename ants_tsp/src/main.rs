@@ -9,7 +9,7 @@ use ants_tsp as ants;
 //use std::sync::{Arc};
 use std::env;
 use ants::conexion_bd::get_ciudades;
-use rand::{XorShiftRng, SeedableRng};
+use rand::{XorShiftRng, SeedableRng,Rng};
 use ants_tsp::structs::conexion::Conexion;
 use ants_tsp::structs::ant::Ant;
 use ants_tsp::structs::city::City;
@@ -19,11 +19,15 @@ use config::{Config, File, FileFormat, Value};
 
 
 
+<<<<<<< HEAD
 static RECORRIDOS: usize = 40000;
+=======
+static RECORRIDOS: usize = 40;
+>>>>>>> 95e924b05271dbfdef6deeb5479ef91e45f262a9
 static NUM_HORMIGAS: usize = 40;
 static AUMENTO_FEROMONA: f64 = 0.15;
-static DISMINUCION_FEROMONA: f64 = 0.5;
-static FEROMONA_INICIAL: f64 = 0.15;
+static DISMINUCION_FEROMONA: f64 = 0.75;
+static FEROMONA_INICIAL: f64 = 0.125;
 
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
@@ -59,7 +63,7 @@ fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
 
     for city in conj_ciudades {
         for city_1 in conj_ciudades {
-            matriz[city.ciudad][city_1.ciudad].visibilidad = (max_dist - matriz[city.ciudad][city_1.ciudad].distancia)/sum;
+            matriz[city.ciudad][city_1.ciudad].visibilidad = 100.0*(max_dist - matriz[city.ciudad][city_1.ciudad].distancia)/sum;
         }
     }
 }
@@ -84,7 +88,7 @@ fn main() {
     let conjunto_ciudades = to_usize_vec(c.get_array("ciudad_ids").expect("No hay lista de ids de ciudades declarada en Ajustes.toml"));
     let camino_inicial = to_usize_vec(c.get_array("camino_incial").expect("No hay lista de ciudades iniciales declarada en Ajustes.toml"));
 
-    if camino_inicial.len() != 1 {
+    if camino_inicial.len() != 0 {
         tipo_ayuda = 2;
     }
     //println!("{}", conjunto_ciudades.len());
@@ -104,6 +108,7 @@ fn main() {
     println!("{:?}", conjunto_ciudades);
 
     set_visibility(&mut matriz,&ciudades_a_visitar);
+    /*
     if tipo_ayuda == 2 {
         for i in 0..camino_inicial.len()-1 {
             matriz[camino_inicial[i]][camino_inicial[i+1]].feromona += FEROMONA_INICIAL;
@@ -111,11 +116,21 @@ fn main() {
         }
         inicial = camino_inicial[0].clone();
     }
+    */
     for semilla in semillas {
          println!("----------------------------------------\n\n----------------------------------------\nSemilla: {}", semilla);
         let mut matriz_ind = matriz.clone();
         let seed = [semilla, semilla*3, semilla*5, semilla*7];
         let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
+        let mut camino_inicial_ind = camino_inicial.clone();
+        if tipo_ayuda == 2 {
+            rng.shuffle(&mut camino_inicial_ind);
+            for i in 0..camino_inicial.len()-1 {
+                matriz_ind[camino_inicial_ind[i]][camino_inicial_ind[i+1]].feromona += FEROMONA_INICIAL;
+                matriz_ind[camino_inicial_ind[i+1]][camino_inicial_ind[i]].feromona += FEROMONA_INICIAL;
+            }
+            inicial = camino_inicial[0].clone();
+        }
 
         let mut solucion = Solucion::new(semilla as usize);
         for _i in 0..RECORRIDOS {
