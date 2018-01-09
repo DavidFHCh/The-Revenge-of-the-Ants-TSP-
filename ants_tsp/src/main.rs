@@ -19,11 +19,7 @@ use config::{Config, File, FileFormat, Value};
 
 
 
-<<<<<<< HEAD
-static RECORRIDOS: usize = 40000;
-=======
-static RECORRIDOS: usize = 40;
->>>>>>> 95e924b05271dbfdef6deeb5479ef91e45f262a9
+static RECORRIDOS: usize = 400;
 static NUM_HORMIGAS: usize = 40;
 static AUMENTO_FEROMONA: f64 = 0.15;
 static DISMINUCION_FEROMONA: f64 = 0.75;
