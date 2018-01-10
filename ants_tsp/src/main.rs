@@ -21,9 +21,9 @@ use config::{Config, File, FileFormat, Value};
 
 static RECORRIDOS: usize = 400;
 static NUM_HORMIGAS: usize = 40;
-static AUMENTO_FEROMONA: f64 = 0.15;
+static AUMENTO_FEROMONA: f64 = 0.1;
 static DISMINUCION_FEROMONA: f64 = 0.75;
-static FEROMONA_INICIAL: f64 = 0.125;
+static FEROMONA_INICIAL: f64 = 0.05;
 
 
 fn to_usize_vec(values: Vec<Value>) -> Vec<usize> {
@@ -49,7 +49,7 @@ fn set_all_false(conj_ciudades:&mut Vec<City>) {
 }
 
 fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
-    let max_dist = 4982205.69 + 1000000.0;
+    let max_dist = 4982205.69;
     let mut sum = 0.0;
     for city in conj_ciudades {
         for city_1 in conj_ciudades {
@@ -60,6 +60,8 @@ fn set_visibility(matriz: &mut Vec<Vec<Conexion>>, conj_ciudades: &Vec<City>) {
     for city in conj_ciudades {
         for city_1 in conj_ciudades {
             matriz[city.ciudad][city_1.ciudad].visibilidad = 100.0*(max_dist - matriz[city.ciudad][city_1.ciudad].distancia)/sum;
+
+            //println!("{:?}", matriz[city.ciudad][city_1.ciudad].visibilidad );
         }
     }
 }
@@ -116,12 +118,19 @@ fn main() {
     for semilla in semillas {
          println!("----------------------------------------\n\n----------------------------------------\nSemilla: {}", semilla);
         let mut matriz_ind = matriz.clone();
-        let seed = [semilla, semilla*3, semilla*5, semilla*7];
+        let seed = [semilla, semilla*semilla, semilla*semilla*semilla, semilla*semilla*semilla*semilla];
         let mut rng: XorShiftRng = SeedableRng::from_seed(seed);
         let mut camino_inicial_ind = camino_inicial.clone();
         if tipo_ayuda == 2 {
+            let c_inicial = camino_inicial_ind[0].clone();
             rng.shuffle(&mut camino_inicial_ind);
-            for i in 0..camino_inicial.len()-1 {
+            for i in 0..camino_inicial_ind.len() {
+                if camino_inicial_ind[i] == c_inicial {
+                    camino_inicial_ind.swap(0,i);
+                    break;
+                }
+            }
+            for i in 0..camino_inicial_ind.len()-1 {
                 matriz_ind[camino_inicial_ind[i]][camino_inicial_ind[i+1]].feromona += FEROMONA_INICIAL;
                 matriz_ind[camino_inicial_ind[i+1]][camino_inicial_ind[i]].feromona += FEROMONA_INICIAL;
             }
